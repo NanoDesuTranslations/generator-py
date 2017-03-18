@@ -1,0 +1,119 @@
+.outer-box {
+	background-color: #3c3c3c;
+	padding: 5px;
+	border-radius: 4px;
+	-webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+	box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+	max-width: 1170px;
+	margin: 0 auto;
+}
+
+.content-container .panel {
+	margin-bottom: 0px;
+}
+
+/*html,body,body>.container,body>.container>.row,body>.container>.row>div {
+	height: 100%;
+}*/
+
+body {
+	color: #cccccc;
+}
+
+pre {
+	display: block;
+	padding: 0;
+	margin: 0;
+	font-size: inherit;
+	line-height: inherit;
+	word-break: keep-all;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+	color: inherit;
+	background-color: transparent;
+	border: none;
+	border-radius: 0;
+}
+
+body>.container-fluid, body>.container {
+	/*padding-top: 10px;
+	padding-bottom: 10px;*/
+}
+
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+
+.panel-body {
+	padding: 15px;
+}
+
+.header-image {
+	padding: 0;
+}
+
+.header-image img {
+	margin: 0 auto;
+
+}
+
+.navbar-default {
+	max-width: 1170px;
+	margin: 0 auto;
+}
+
+.colpad-left {
+	padding-left: 10px;
+	padding-right: 0;
+}
+
+.colpad-right {
+	padding-right: 10px;
+	padding-left: 0;
+}
+
+.navbar {
+	border: 0;
+	/*background-color: #232020;*/
+}
+
+.content-container {
+	margin-top: 20px;
+}
+
+/*.box {
+	-webkit-box-shadow: 0px 0px 0px 5px rgba(60,60,60,1);
+	-moz-box-shadow: 0px 0px 0px 5px rgba(60,60,60,1);
+	box-shadow: 0px 0px 0px 5px rgba(60,60,60,1);
+}*/
+
+.centered {
+	margin: 0 auto;
+	float: none;
+}
+
+.navbar .navbar-nav {
+  display: inline-block;
+  float: none;
+  vertical-align: top;
+	margin-top:5px;
+}
+
+.navbar .navbar-nav>li {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.navbar .navbar-nav>li>a {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.navbar .navbar-collapse {
+  text-align: center;
+}
+
+/*body {
+	background-image: url("http://www.oyashirosama.com/web/kira/lib/images/special110614pict.jpg");
+}*/

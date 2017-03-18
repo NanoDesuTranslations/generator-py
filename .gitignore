@@ -1,0 +1,4 @@
+__pycache__
+config/*.hjson
+!config/default.hjson
+/output

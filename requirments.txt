@@ -1,0 +1,6 @@
+fs==2.0.0
+hjson==2.0.2
+pystache==0.5.4
+yattag==1.7.2
+tornado==4.4.2
+markdown==2.6.8

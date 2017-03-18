@@ -1,0 +1,21 @@
+mongo-url: null
+
+min-status: 5
+
+//list of series to retrieve, all series if null for false
+series: null
+
+url-prefix: ""
+series_preifx: true
+
+output-path: output
+
+include-raw: true
+
+enabled: {
+  
+}
+
+ftp-info: null
+
+debug-server-port: 8000
