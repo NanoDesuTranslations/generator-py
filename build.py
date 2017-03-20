@@ -72,46 +72,7 @@ class Series:
     def __getitem__(self, key):
         return self.raw_series[key]
 
-def gen_fs(test_fs, all_pages, config, include_static=True, noisy=False):
-    if include_static:
-        test_fs.removetree('/')
-    else:
-        for d in test_fs.listdir('/'):
-            if d == 'static':
-                continue
-            if test_fs.isfile(d):
-                test_fs.remove(d)
-            else:
-                test_fs.removetree(d)
-    
-    for name, root in all_pages.items():
-        if config.series_prefix:
-            test_fs.makedir(root.series.path_part)
-            root.build_fs(test_fs.opendir(root.series.path_part))
-        else:
-            root.build_fs(test_fs)
-    
-    #generate an index page of series if multi series site
-    if config.series_prefix:
-        with test_fs.open('index.html', 'w') as f:
-            f.write('<a style="color:black" href="https://nanodesutranslations.wordpress.com/"><h1>Nanodesu</h1></a>')
-            for name, root in all_pages.items():
-                series = root.series
-                f.write('<div><a href="{}">{}</a><br></div>'.format(series.path_part, series.name))
-    
-    if include_static:
-        with open_fs("osfs://static") as static_fs:
-            fs.copy.copy_fs(static_fs, test_fs)
-
-def main():
-    try:
-        config_fn_i = sys.argv.index('--config')
-        config_fn = sys.argv[config_fn_i + 1]
-    except (ValueError, IndexError):
-        config = Config()
-    else:
-        config = Config(config_fn)
-    
+def retrieve_pages(config):
     remote = pymongo.MongoClient(config['mongo-url'])
     series_query = {}
     if config.get('series'):
@@ -157,6 +118,50 @@ def main():
                 path.append(path_postfix)
             
             root.add_page(path, page)
+    
+    return all_pages
+
+def gen_fs(test_fs, all_pages, config, include_static=True, noisy=False):
+    if include_static:
+        test_fs.removetree('/')
+    else:
+        for d in test_fs.listdir('/'):
+            if d == 'static':
+                continue
+            if test_fs.isfile(d):
+                test_fs.remove(d)
+            else:
+                test_fs.removetree(d)
+    
+    for name, root in all_pages.items():
+        if config.series_prefix:
+            test_fs.makedir(root.series.path_part)
+            root.build_fs(test_fs.opendir(root.series.path_part))
+        else:
+            root.build_fs(test_fs)
+    
+    #generate an index page of series if multi series site
+    if config.series_prefix:
+        with test_fs.open('index.html', 'w') as f:
+            f.write('<a style="color:black" href="https://nanodesutranslations.wordpress.com/"><h1>Nanodesu</h1></a>')
+            for name, root in all_pages.items():
+                series = root.series
+                f.write('<div><a href="{}">{}</a><br></div>'.format(series.path_part, series.name))
+    
+    if include_static:
+        with open_fs("osfs://static") as static_fs:
+            fs.copy.copy_fs(static_fs, test_fs)
+
+def main():
+    try:
+        config_fn_i = sys.argv.index('--config')
+        config_fn = sys.argv[config_fn_i + 1]
+    except (ValueError, IndexError):
+        config = Config()
+    else:
+        config = Config(config_fn)
+    
+    all_pages = retrieve_pages(config)
     
     ftp_info = config.get('ftp-info')
     if ftp_info is not None:
@@ -207,7 +212,14 @@ def main():
                     gen_fs(out_fs, all_pages, config)
                     if "tree" in sys.argv:
                         out_fs_root.tree()
-                debug_server.start_debug_server(out_fs_root, config['debug-server-port'], {'/regen': regen})
+                def p_reload():
+                    config.load_config()
+                    config.page_renderer.load_templates()
+                    all_pages = retrieve_pages(config)
+                    gen_fs(out_fs, all_pages, config)
+                
+                special_pages = {'/regen': regen, '/reload': p_reload}
+                debug_server.start_debug_server(out_fs_root, config['debug-server-port'], special_pages)
 
 if __name__ == '__main__':
     main()
