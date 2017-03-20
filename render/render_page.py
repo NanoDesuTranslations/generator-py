@@ -20,7 +20,7 @@ class PageRenderer:
     
     def load_templates(self):
         for template_name, template_fn in _default_templates.items():
-            with open(template_fn) as f:
+            with open(template_fn, encoding='utf8') as f:
                 self.templates[template_name] = f.read()
     
     def render(self, page):
