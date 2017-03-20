@@ -67,7 +67,7 @@ class Page:
         return self.path
     
     def get_fs_path(self):
-        url_prefix = self.config.url_prefix
+        url_prefix = self.config.path_prefix
         series_prefix = self.config.series_prefix
         
         if series_prefix:

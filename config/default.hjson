@@ -5,7 +5,8 @@ min-status: 5
 //list of series to retrieve, all series if null for false
 series: null
 
-url-prefix: ""
+url-prefix: null
+env-url-prefix: null
 series_preifx: true
 
 output-path: output

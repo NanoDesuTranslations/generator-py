@@ -13,7 +13,7 @@ _default_templates = {
 
 class PageRenderer:
     def __init__(self, config):
-        self.url_prefix = config.get('url-prefix', '')
+        self.url_prefix = config.path_prefix
         self.config = config
         self.templates = {}
         self.load_templates()

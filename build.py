@@ -20,6 +20,8 @@ from page import Page
 from util import try_int
 from render import PageRenderer
 
+class ConfigError(Exception):
+    pass
 
 class Config:
     def __init__(self, additional_file=None):
@@ -47,7 +49,11 @@ class Config:
             raw_config = config_override
         
         self.raw_config = raw_config
-        self.url_prefix = str(raw_config['url-prefix'])
+        self.url_prefix = raw_config['url-prefix'] or ""
+        self.env_url_prefix = raw_config['env-url-prefix'] or ""
+        if self.url_prefix and self.env_url_prefix:
+            raise ConfigError()
+        self.path_prefix = self.url_prefix or self.env_url_prefix
         self.series_prefix = bool(raw_config['series_preifx'])
     
     def get(self, key, default=None):
