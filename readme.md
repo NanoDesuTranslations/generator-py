@@ -1,5 +1,7 @@
 # Setup
 
+* get python 3 (may require >=3.5, haven't confirmed)
+
 * `git clone` repo
 * `pip install -r requirments.txt`
 * create `config/local.hjson` with `mongo-url`
