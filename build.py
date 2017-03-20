@@ -116,6 +116,8 @@ def main():
     series_query = {}
     if config.get('series'):
         series_query['name'] = {'$in': config.get('series')}
+    if config['min-status'] is not None:
+        series_query['config.status'] = {'$gte': config['min-status']}
     remote_series = remote.ndtest.series.find(series_query)
     remote_series = list(remote_series)
     series_ids = [str(s['_id']) for s in remote_series]
