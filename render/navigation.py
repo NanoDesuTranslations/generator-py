@@ -14,11 +14,12 @@ def probably_int(value):
 def gen_nav(root, page):
     doc, tag, text, line = Doc().ttl()
     
-    with tag('li'):
-        try:
-            line('a', 'About', href=root.children['about'].get_fs_path())
-        except KeyError:
-            line('a', 'About', href='javascript:void(0)')
+    if root.series.fixed_nav_entries:
+        with tag('li'):
+            try:
+                line('a', 'About', href=root.children['about'].get_fs_path())
+            except KeyError:
+                line('a', 'About', href='javascript:void(0)')
     
     def add_children(root):
         for path, child in sorted(root.children.items(), key=lambda p: page_sort_key_predicate(p[1])):
@@ -39,7 +40,7 @@ def gen_nav(root, page):
                     line('a', nav_text, href=child.get_fs_path())
     
     for path, child in sorted(root.children.items(), key=lambda p: page_sort_key_predicate(p[1])):
-        if path in ('about', 'contact'):
+        if path in ('about', 'contact') and child.series.fixed_nav_entries:
             continue
         
         if child.children:
@@ -64,12 +65,13 @@ def gen_nav(root, page):
             with tag('li'):
                 with tag('a'):
                     doc.attr(href=child.get_fs_path())
-                    text(path)
+                    text(child.get_title())
     
-    with tag('li'):
-        try:
-            line('a', 'Contact', href=root.children['contact'].get_fs_path())
-        except KeyError:
-            line('a', 'Contact', href='javascript:void(0)')
+    if root.series.fixed_nav_entries:
+        with tag('li'):
+            try:
+                line('a', 'Contact', href=root.children['contact'].get_fs_path())
+            except KeyError:
+                line('a', 'Contact', href='javascript:void(0)')
     
     return doc.getvalue()

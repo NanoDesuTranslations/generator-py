@@ -74,9 +74,7 @@ class Series:
         self.hier = s_config.get('hierarchy', [])
         self.id = str(raw_series['_id'])
         self.path_part = self.name.lower().replace(' ', '-')
-    
-    def __getitem__(self, key):
-        return self.raw_series[key]
+        self.fixed_nav_entries = bool(s_config.get('fixed_nav_entries', True))
 
 def retrieve_pages(config):
     remote = pymongo.MongoClient(config['mongo-url'])
