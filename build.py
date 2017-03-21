@@ -32,16 +32,16 @@ class Config:
     
     def load_config(self, config_override=None):
         if config_override is None:
-            with open('config/default.hjson') as f:
+            with open('config/default.hjson', encoding='utf8') as f:
                 raw_config = hjson.loads(f.read())
                 try:
-                    with open('config/local.hjson') as f:
+                    with open('config/local.hjson', encoding='utf8') as f:
                         raw_config.update(hjson.loads(f.read()))
                 except FileNotFoundError:
                     pass
                 if self.additional_file:
                     try:
-                        with open('config/{}.hjson'.format(self.additional_file)) as f:
+                        with open('config/{}.hjson'.format(self.additional_file), encoding='utf8') as f:
                             raw_config.update(hjson.loads(f.read()))
                     except FileNotFoundError:
                         pass
