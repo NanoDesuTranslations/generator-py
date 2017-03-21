@@ -22,7 +22,8 @@ def gen_nav(root, page):
     
     def add_children(root):
         for path, child in sorted(root.children.items(), key=lambda p: page_sort_key_predicate(p[1])):
-            nav_text = "{} {}".format(path, child.title) if probably_int(path) else child.title
+            #nav_text = "{} {}".format(path, child.title) if probably_int(path) else child.title
+            nav_text = child.get_title()
             if child.children:
                 with tag('li', klass='dropdown-submenu'):
                     with tag('a', href='javascript:void(0)'):
@@ -53,7 +54,8 @@ def gen_nav(root, page):
                         'aria-expanded': 'false',
                     }
                     doc.attr(**attr)
-                    line('span', path)
+                    #line('span', path)
+                    line('span', child.get_title())
                     line('span', '', klass='caret')
                 with tag('ul', klass='dropdown-menu'):
                     doc.attr(('data-submenu', ''))

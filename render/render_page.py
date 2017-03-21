@@ -31,16 +31,19 @@ class PageRenderer:
         wrap_tag = 'div' if page.renderer == 'markdown' else 'pre'
         prefix = "<{} style='font-family:Comic Neue, Helvetica, Hack;max-width:100%;'>".format(wrap_tag)
         
+        # def format_link(page):
+        #     if not page.is_index:
+        #         if page.user_path:
+        #             return "<a href=\"{0}\" />{1}</a>".format(page.path_part, page.title)
+        #         else:
+        #             return "<a href=\"{0}\" />{0}: {1}</a>".format(page.path_part, page.title)
+        #     else:
+        #         return "<a href=\"{0}\" />{1} {0}</a>".format(page.path_part, page.get_index_title())
+        #
         def format_link(page):
-            if not page.is_index:
-                if page.user_path:
-                    return "<a href=\"{0}\" />{1}</a>".format(page.path_part, page.title)
-                else:
-                    return "<a href=\"{0}\" />{0}: {1}</a>".format(page.path_part, page.title)
-            else:
-                return "<a href=\"{0}\" />{1} {0}</a>".format(page.path_part, page.get_index_title())
+            return "<a href=\"{0}\" />{1}</a>".format(page.path_part, page.get_title())
         
-        prefix += "\n<br>".join(format_link(child)for child in page)
+        prefix += "<br>".join(format_link(child) for child in page)
         
         if page.renderer is None:
             prefix += '\n\n'
@@ -50,7 +53,7 @@ class PageRenderer:
         postfix = "</{}>".format(wrap_tag)
         
         if page.renderer == 'precode':
-            prefix += '<pre><code>'
+            prefix += '<code><pre>'
             postfix = '</pre></code>' + postfix
         
         if not page.is_index:

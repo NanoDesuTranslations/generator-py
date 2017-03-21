@@ -41,6 +41,24 @@ class Page:
         
         cur.set_raw_page(page)
     
+    def get_title(self):
+        if self.title:
+            title = self.title
+            
+            if title.startswith("{}: ".format(self.path_part)):
+                return title
+            if title.endswith(" {}".format(self.path_part)):
+                return title
+            
+            if try_int(self.path_part, None) is not None:
+                title = "{}: {}".format(self.path_part, title)
+            return title
+        elif self.user_path:
+            return self.user_path.title()
+        else:
+            title = "{} {}".format(self.get_index_title(), self.path_part)
+            return title
+    
     def get_index_title(self):
         path_i = len(self.path)
         try:
