@@ -19,6 +19,7 @@ class Page:
         self.renderer = None
         
         self.title = ''
+        self.nav_title = None
         if page is not None:
             self.set_raw_page(page)
     
@@ -42,6 +43,8 @@ class Page:
         cur.set_raw_page(page)
     
     def get_title(self):
+        if self.nav_title is not None:
+            return self.nav_title
         if self.title:
             title = self.title
             
@@ -75,6 +78,7 @@ class Page:
         self.renderer = str(meta.get('renderer_t', 'markdown'))
         self.is_index = False
         self.user_path = str(meta.get('path'))
+        self.nav_title = str(meta.get('nav_title') or '') or None
         
         order = meta.get('order', 0)
         if order == "_0":
