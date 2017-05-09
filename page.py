@@ -88,6 +88,19 @@ class Page:
     def get_path(self):
         return self.path
     
+    def get_fs_series_path(self):
+        url_prefix = self.config.path_prefix
+        series_prefix = self.config.series_prefix
+        
+        if series_prefix:
+            path = '/{}'.format(self.series.path_part)
+        else:
+            path = ''
+        if url_prefix:
+            path = url_prefix + path
+        
+        return path or '/'
+    
     def get_fs_path(self):
         url_prefix = self.config.path_prefix
         series_prefix = self.config.series_prefix

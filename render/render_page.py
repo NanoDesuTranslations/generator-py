@@ -72,7 +72,7 @@ class PageRenderer:
             'parent_path': '..',
             'title': title,
             'header_url': page.series.header_url,
-            'series_url': url_prefix + '/{}'.format(page.series.path_part),
+            'series_url': page.get_fs_series_path(),
             'navbar': gen_nav(page.root, page),
         }
         
