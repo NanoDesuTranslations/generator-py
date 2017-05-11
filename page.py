@@ -17,6 +17,7 @@ class Page:
         self.is_index = True
         self.order = None
         self.renderer = None
+        self.hide_nav = False
         
         self.title = ''
         self.nav_title = None
@@ -79,6 +80,7 @@ class Page:
         self.is_index = False
         self.user_path = str(meta.get('path'))
         self.nav_title = str(meta.get('nav_title') or '') or None
+        self.hide_nav = bool(meta.get('hide_nav', False))
         
         order = meta.get('order', 0)
         if order == "_0":
@@ -148,6 +150,11 @@ class Page:
     
     def render(self):
         return self.config.page_renderer.render(self)
+    
+    def get_nav_children(self):
+        for child in self:
+            if not child.hide_nav:
+                yield child
     
     def __getitem__(self, key):
         return self.children[key]

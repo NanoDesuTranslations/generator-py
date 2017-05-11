@@ -22,7 +22,7 @@ def gen_nav(root, page):
                 line('a', 'About', href='javascript:void(0)')
     
     def add_children(root):
-        for path, child in sorted(root.children.items(), key=lambda p: page_sort_key_predicate(p[1])):
+        for child in root.get_nav_children():
             #nav_text = "{} {}".format(path, child.title) if probably_int(path) else child.title
             nav_text = child.get_title()
             if child.children:
@@ -39,8 +39,8 @@ def gen_nav(root, page):
                 with tag('li'):
                     line('a', nav_text, href=child.get_fs_path())
     
-    for path, child in sorted(root.children.items(), key=lambda p: page_sort_key_predicate(p[1])):
-        if path in ('about', 'contact') and child.series.fixed_nav_entries:
+    for child in root.get_nav_children():
+        if child.path_part in ('about', 'contact') and child.series.fixed_nav_entries:
             continue
         
         if child.children:
