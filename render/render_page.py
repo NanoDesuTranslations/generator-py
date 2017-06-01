@@ -18,6 +18,7 @@ class PageRenderer:
         self.config = config
         self.templates = {}
         self.load_templates()
+        self.hard_links = False
     
     def load_templates(self):
         for template_name, template_fn in _default_templates.items():
@@ -44,12 +45,13 @@ class PageRenderer:
         def format_link(page):
             return "<a href=\"{0}\" />{1}</a>".format(page.path_part, page.get_title())
         
-        prefix += "<br>".join(format_link(child) for child in page)
-        
-        if page.renderer is None:
-            prefix += '\n\n'
-        else:
-            prefix += '<br><br>'
+        if self.hard_links:
+            prefix += "<br>".join(format_link(child) for child in page)
+            
+            if page.renderer is None:
+                prefix += '\n\n'
+            else:
+                prefix += '<br><br>'
         
         postfix = "</{}>".format(wrap_tag)
         
