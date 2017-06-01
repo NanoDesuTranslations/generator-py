@@ -79,7 +79,7 @@ def process_blog_posts(posts, series):
             'title': 'Blog',
             'hide_nav': True
         },
-        'series': posts[0]['series']
+        #'series': posts[0]['series']
     }
     page = BlogPost(series=series)
     page.set_raw_page(r_page)
