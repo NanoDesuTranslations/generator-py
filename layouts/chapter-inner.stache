@@ -1,0 +1,12 @@
+<div class="panel panel-default box">
+  <div class="panel-heading">
+    <h4> {{ title }} <a href="{{parent_path}}">⇖</a></h4>
+  </div>
+  <div class="panel-body">
+
+    <!-- content start -->
+    {{{ content }}}
+    <!-- content end -->
+  </div>
+</div>
+<div id="disqus_thread" style="min-height: 100px"></div>

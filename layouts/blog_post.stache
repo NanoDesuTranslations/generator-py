@@ -1,0 +1,27 @@
+<div class="panel panel-default">
+  <div class="panel-heading clearfix">
+    <div class="pull-left">
+      <h5>
+        <a href="{{url}}">
+          {{title}}
+        </a>
+      </h5>
+    </div>
+    <div class="pull-right">
+      <span>
+        <!--{} {}'.format(pub_date, m_blog['pinned']))-->
+        {{date}}
+      </span>
+      <br>
+      {{#pinned}}
+        <span style="float:right">
+          pinned
+        </span>
+      {{/pinned}}
+    </div>
+  </div>
+  <div class="panel-body">
+    {{{content}}}
+  </div>
+</div>
+<br />

@@ -16,6 +16,7 @@ import pymongo
 import hjson
 
 from page import Page
+import blog
 
 from util import try_int
 from render import PageRenderer
@@ -95,6 +96,7 @@ def retrieve_pages(config):
     remote_pages = list(remote_pages)
 
     blog_pages = [p for p in remote_pages if p['meta'].get('blog')]
+    blog_pages = [p for p in blog_pages if not p['meta'].get('deleted')]
 
     remote_pages = [p for p in remote_pages if not p['meta'].get('deleted')]
     remote_pages = [p for p in remote_pages if not p['meta'].get('blog')]
@@ -107,6 +109,7 @@ def retrieve_pages(config):
         hier = series.hier
         series_id = series.id
         pages = [p for p in remote_pages if p['series'] == series_id]
+        series_blog_pages = [p for p in blog_pages if p['series'] == series_id]
         
         root = Page(series=series)
         all_pages[series.name] = root
@@ -122,6 +125,9 @@ def retrieve_pages(config):
                 path.append(path_postfix)
             
             root.add_page(path, page)
+            
+            for path, page in blog.process_blog_posts(series_blog_pages, series):
+                root.add_page_obj(path, page)
     
     return all_pages
 

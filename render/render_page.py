@@ -5,7 +5,8 @@ from .navigation import gen_nav
 from ordering import page_sort_key_predicate
 
 _default_templates = {
-    'chapter': 'layouts/chapter.stache',
+    'page': 'layouts/page.stache',
+    'chapter-inner': 'layouts/chapter-inner.stache',
     'disqus': 'layouts/disqus.stache',
     'google-analytics': 'layouts/google-analytics.stache',
     'social-media': 'layouts/socialbs.stache',
@@ -23,7 +24,7 @@ class PageRenderer:
             with open(template_fn, encoding='utf8') as f:
                 self.templates[template_name] = f.read()
     
-    def render(self, page):
+    def render(self, page, template_key, inner_template=None):
         url_prefix = self.url_prefix
         config = self.config
         templates = self.templates
@@ -96,5 +97,8 @@ class PageRenderer:
         if enabled.get('social-media'):
             params['social_media'] = templates['social-media']
         
-        content = pystache.render(templates['chapter'], params)
+        if inner_template:
+            params['content'] = pystache.render(templates[inner_template], params)
+        
+        content = pystache.render(templates[template_key], params)
         return content

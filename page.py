@@ -43,6 +43,30 @@ class Page:
         
         cur.set_raw_page(page)
     
+    def add_page_obj(self, path, page):
+        if path == []:
+            raise ValueError("Can't set root page object.")
+        cur = self
+        cur_path = []
+        for p in path:
+            cur_path.append(p)
+            if p in cur.children:
+                cur = cur.children[p]
+            else:
+                new_page = page
+                new_page.change_root(self.root)
+                series = self.series
+                parent = cur
+                
+                new_page.path = list(cur_path)
+                new_page.path_part = p
+                cur.children[p] = new_page
+                cur = new_page
+    
+    def change_root(self, new_root):
+        for p in self.recurse():
+            p.root = new_root
+    
     def get_title(self):
         if self.nav_title is not None:
             return self.nav_title
@@ -149,7 +173,7 @@ class Page:
             child.build_fs(out_fs.opendir(p_n))
     
     def render(self):
-        return self.config.page_renderer.render(self)
+        return self.config.page_renderer.render(self, 'page', 'chapter-inner')
     
     def get_nav_children(self):
         for child in self:
