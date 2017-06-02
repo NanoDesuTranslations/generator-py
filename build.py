@@ -127,7 +127,14 @@ def retrieve_pages(config):
             root.add_page(path, page)
             
             for path, page in blog.process_blog_posts(series_blog_pages, series):
-                root.add_page_obj(path, page)
+                if path == []:
+                    for child in root:
+                        child.change_root(page)
+                    page.children = root.children
+                    root = page
+                    all_pages[series.name] = root
+                else:
+                    root.add_page_obj(path, page)
     
     return all_pages
 

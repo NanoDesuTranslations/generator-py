@@ -73,13 +73,13 @@ class Page:
         if self.title:
             title = self.title
             
-            if title.startswith("{}: ".format(self.path_part)):
-                return title
-            if title.endswith(" {}".format(self.path_part)):
-                return title
-            
-            if try_int(self.path_part, None) is not None:
-                title = "{}: {}".format(self.path_part, title)
+            # if title.startswith("{}: ".format(self.path_part)):
+            #     return title
+            # if title.endswith(" {}".format(self.path_part)):
+            #     return title
+            # 
+            # if try_int(self.path_part, None) is not None:
+            #     title = "{}: {}".format(self.path_part, title)
             return title
         elif self.user_path:
             return self.user_path.title()

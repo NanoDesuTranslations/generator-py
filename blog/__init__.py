@@ -72,7 +72,8 @@ def process_blog_posts(posts, series):
     
     ca('<div id="disqus_thread" style="min-height: 100px"></div>')
     
-    path = ['blog']
+    # path = ['blog']
+    path = []
     r_page = {
         'content': ''.join(content),
         'meta': {
@@ -91,7 +92,8 @@ def process_blog_posts(posts, series):
         
         post['meta']['hide_nav'] = True
         
-        path = ['blog', href]
+        # path = ['blog', href]
+        path = [href]
         
         page = BlogPost(series=series)
         page.set_raw_page(post)

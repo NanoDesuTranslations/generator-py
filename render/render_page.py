@@ -31,7 +31,8 @@ class PageRenderer:
         templates = self.templates
         
         wrap_tag = 'div' if page.renderer == 'markdown' else 'pre'
-        prefix = "<{} style='font-family:Comic Neue, Helvetica, Hack;max-width:100%;'>".format(wrap_tag)
+        #prefix = "<{} style='font-family:Comic Neue, Helvetica, Hack;max-width:100%;'>".format(wrap_tag)
+        prefix = "<{}>".format(wrap_tag)
         
         # def format_link(page):
         #     if not page.is_index:
