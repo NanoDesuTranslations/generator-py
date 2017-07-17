@@ -3,7 +3,7 @@ import hashlib
 import requests
 
 class Netlify:
-    def __init__(self, key, site_id):
+    def __init__(self, key, site_id=None):
         pass
         self.host = 'api.netlify.com/api/v1'
         self.key = key
@@ -74,3 +74,25 @@ class Netlify:
             for path in deploy.walk.files()
         }
         return self.deploy_files(files)
+
+def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Netlify')
+    parser.add_argument('-k', '--key', required=True,
+        help='netlify api key')
+    parser.add_argument('command',
+        choices=['create'],
+        help='')
+    
+    args = parser.parse_args()
+    if args.command == 'create':
+        netlify = Netlify(args.key)
+        res = netlify.create_site()
+        site_id = res['site_id']
+        site_name = res['name']
+        print("id", site_id)
+        print("name", site_name)
+
+if __name__ == '__main__':
+    main()
