@@ -5,3 +5,4 @@ yattag==1.7.2
 tornado==4.4.2
 markdown==2.6.8
 pymongo==3.3.0
+requests==2.18.1

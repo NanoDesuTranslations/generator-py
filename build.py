@@ -181,6 +181,16 @@ def main():
     all_pages = retrieve_pages(config)
     
     ftp_info = config.get('ftp-info')
+    netlify_key = config.get('netlify-key')
+    netlify_site_id = config.get('netlify-site-id')
+    if netlify_key and netlify_site_id:
+        out_fs = open_fs("mem://")
+        gen_fs(out_fs, all_pages, config)
+        
+        from netlify import Netlify
+        netlify = Netlify(netlify_key, netlify_site_id)
+        netlify.deploy_fs(out_fs)
+    
     if ftp_info is not None:
         include_static = 'static' in sys.argv
         
@@ -198,7 +208,8 @@ def main():
                 ftp_fs.makedir(config.url_prefix)
                 ftp_fs = ftp_fs.opendir(config.url_prefix)
             gen_fs(ftp_fs, all_pages, config, include_static=include_static, noisy=True)
-    else:
+    
+    if config['output-path']:
         debug_mode = "debug" in sys.argv
         
         def get_out_fs():
