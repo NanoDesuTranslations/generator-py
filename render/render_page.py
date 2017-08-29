@@ -71,8 +71,8 @@ class PageRenderer:
             content = prefix + postfix
             title = "Index"
         
-        if self.navigation is None:
-            self.navigation = gen_nav(page.root, page)
+        if self.navigation is None or page.series.id != self.navigation[0]:
+            self.navigation = (page.series.id, gen_nav(page.root, page))
         
         params = {
             'content': content,
@@ -81,7 +81,7 @@ class PageRenderer:
             'title': title,
             'header_url': page.series.header_url,
             'series_url': page.get_fs_series_path(),
-            'navbar': self.navigation,
+            'navbar': self.navigation[1],
         }
         
         enabled = config.get('enabled', {})
