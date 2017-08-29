@@ -49,6 +49,7 @@ class Page:
         cur = self
         cur_path = []
         for p in path:
+            p = p.replace('/', '')
             cur_path.append(p)
             if p in cur.children:
                 cur = cur.children[p]
