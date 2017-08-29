@@ -19,6 +19,7 @@ class PageRenderer:
         self.templates = {}
         self.load_templates()
         self.hard_links = False
+        self.navigation = None
     
     def load_templates(self):
         for template_name, template_fn in _default_templates.items():
@@ -69,7 +70,10 @@ class PageRenderer:
         else:
             content = prefix + postfix
             title = "Index"
-            
+        
+        if self.navigation is None:
+            self.navigation = gen_nav(page.root, page)
+        
         params = {
             'content': content,
             'rootPath': url_prefix,
@@ -77,7 +81,7 @@ class PageRenderer:
             'title': title,
             'header_url': page.series.header_url,
             'series_url': page.get_fs_series_path(),
-            'navbar': gen_nav(page.root, page),
+            'navbar': self.navigation,
         }
         
         enabled = config.get('enabled', {})
