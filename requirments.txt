@@ -1,8 +1,8 @@
-fs==2.0.0
-hjson==2.0.2
+fs==2.0.23
+hjson==3.0.1
 pystache==0.5.4
-yattag==1.7.2
-tornado==4.4.2
-markdown==2.6.8
-pymongo==3.3.0
-requests==2.18.1
+yattag==1.10.0
+tornado==5.0.2
+markdown==2.6.11
+pymongo==3.6.1
+requests==2.18.4
