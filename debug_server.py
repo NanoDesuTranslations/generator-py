@@ -21,7 +21,10 @@ def start_debug_server(debug_fs, port=8000, special=None):
             try:
                 if uri.endswith('.css'):
                     self.set_header('Content-Type', 'text/css')
-                self.finish(debug_fs.open(uri).read())
+                if uri.endswith('.jpg'):
+                    self.set_header('Content-Type', 'image/jpg')
+                #self.finish(debug_fs.open(uri).read())
+                self.finish(debug_fs.getbytes(uri))
             except FileExpected:
                 if not uri.endswith('/'):
                     self.redirect('{}/'.format(uri), True)

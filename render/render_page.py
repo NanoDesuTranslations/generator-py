@@ -13,13 +13,14 @@ _default_templates = {
 }
 
 class PageRenderer:
-    def __init__(self, config):
+    def __init__(self, config, *, prerenderer=None):
         self.url_prefix = config.path_prefix
         self.config = config
         self.templates = {}
         self.load_templates()
         self.hard_links = False
         self.navigation = None
+        self.prerenderer = prerenderer
     
     def load_templates(self):
         for template_name, template_fn in _default_templates.items():
@@ -30,8 +31,9 @@ class PageRenderer:
         url_prefix = self.url_prefix
         config = self.config
         templates = self.templates
+        renderers = page.renderer.split('+') if page.renderer else []
         
-        wrap_tag = 'div' if page.renderer == 'markdown' else 'pre'
+        wrap_tag = 'div' if 'markdown' in renderers else 'pre'
         #prefix = "<{} style='font-family:Comic Neue, Helvetica, Hack;max-width:100%;'>".format(wrap_tag)
         prefix = "<{}>".format(wrap_tag)
         
@@ -50,20 +52,23 @@ class PageRenderer:
         if self.hard_links:
             prefix += "<br>".join(format_link(child) for child in page)
             
-            if page.renderer is None:
+            if not renderers:
                 prefix += '\n\n'
             else:
                 prefix += '<br><br>'
         
         postfix = "</{}>".format(wrap_tag)
         
-        if page.renderer == 'precode':
+        if 'precode' in renderers:
             prefix += '<code><pre>'
             postfix = '</pre></code>' + postfix
         
         if not page.is_index:
             content = page.content
-            if page.renderer == 'markdown':
+            if 'preproc' in renderers:
+                if self.prerenderer is not None:
+                    content = self.prerenderer.render(content)
+            if 'markdown' in renderers:
                 content = markdown.markdown(content, extensions=['markdown.extensions.footnotes'])
             content = prefix + content + postfix
             title = page.title

@@ -9,6 +9,8 @@ url-prefix: null
 env-url-prefix: null
 series_preifx: true
 
+image-folder: null
+
 output-path: output
 
 include-raw: true

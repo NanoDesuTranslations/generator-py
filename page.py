@@ -101,7 +101,7 @@ class Page:
         
         self.content = str(page['content'])
         self.title = str(meta.get('title', ''))
-        self.renderer = str(meta.get('renderer_t', 'markdown'))
+        self.renderer = str(meta.get('renderer_t', 'markdown+preproc'))
         self.is_index = False
         self.user_path = str(meta.get('path'))
         self.nav_title = str(meta.get('nav_title') or '') or None

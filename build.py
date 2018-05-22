@@ -20,6 +20,8 @@ import blog
 
 from util import try_int
 from render import PageRenderer
+from render.prerender import PreRenderer
+from assets import ImageSrc
 
 class ConfigError(Exception):
     pass
@@ -29,7 +31,7 @@ class Config:
         self.additional_file = additional_file
         self.load_config()
         
-        self.page_renderer = PageRenderer(self)
+        self.page_renderer = None
     
     def load_config(self, config_override=None):
         if config_override is None:
@@ -168,6 +170,14 @@ def gen_fs(test_fs, all_pages, config, include_static=True, noisy=False):
     if include_static:
         with open_fs("osfs://static") as static_fs:
             fs.copy.copy_fs(static_fs, test_fs)
+        try:
+            image_ext = config.page_renderer.prerenderer.extensions['image']
+        except (AttributeError, KeyError):
+            pass
+        else:
+            test_fs.makedir('assets', recreate=True)
+            image_ext.add_assets(test_fs.opendir('assets'))
+
 
 def main():
     try:
@@ -178,6 +188,10 @@ def main():
     else:
         config = Config(config_fn)
     
+    image_ext = ImageSrc(config)
+    prerenderer = PreRenderer({'image': image_ext})
+    config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
+
     all_pages = retrieve_pages(config)
     
     ftp_info = config.get('ftp-info')
@@ -242,6 +256,7 @@ def main():
                         out_fs_root.tree()
                 def p_reload():
                     config.load_config()
+                    image_ext.force_reload()
                     config.page_renderer.load_templates()
                     all_pages = retrieve_pages(config)
                     gen_fs(out_fs, all_pages, config)
