@@ -22,6 +22,10 @@ class PageRenderer:
         self.hard_links = False
         self.navigation = None
         self.prerenderer = prerenderer
+        
+        renderer = mistune.Renderer(escape=False)
+        mistune_markdown = mistune.Markdown(renderer=renderer)
+        self._mistune_markdown = mistune_markdown
     
     def load_templates(self):
         for template_name, template_fn in _default_templates.items():
@@ -70,6 +74,8 @@ class PageRenderer:
                 if self.prerenderer is not None:
                     content = self.prerenderer.render(content)
             if 'markdown' in renderers or 'markdown-mistune' in renderers:
+                content = self._mistune_markdown(content)
+            if 'markdown-mistune-nohtml' in renderers:
                 content = mistune.markdown(content)
             if 'markdown-markdown' in renderers:
                 content = markdown.markdown(content, extensions=['markdown.extensions.footnotes'])
