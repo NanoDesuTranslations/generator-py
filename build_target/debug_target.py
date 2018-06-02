@@ -43,7 +43,7 @@ class DebugServer:
             out_fs.tree()
     
     def post_gen(self, series_uuids):
-        self._present_series =series_uuids
+        self._present_series = series_uuids
         state = self.state
         config = self.config
         
@@ -59,6 +59,8 @@ class DebugServer:
             state.other['image_ext'].force_reload()
             config.page_renderer.load_templates()
             series_list = retrieve_series(state)
+            if not state.partial_build:
+                self._present_series = {}
             all_pages, series_list, uuid_hashes = retrieve_pages(state, series_list, self._present_series)
             self._present_series = uuid_hashes
             self.gen_fs(all_pages, series_list, rebuild=True)
