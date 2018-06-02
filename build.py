@@ -114,7 +114,9 @@ def retrieve_series(state):
     config = state.config
     
     remote = state.get_mongo()
-    series_query = {}
+    series_query = {
+        'config.deleted': {'$ne': True}
+    }
     if config.get('series'):
         series_query['name'] = {'$in': config.get('series')}
     if config['min-status'] is not None:
