@@ -1,4 +1,5 @@
 import markdown
+import mistune
 import pystache
 
 from .navigation import gen_nav
@@ -68,7 +69,9 @@ class PageRenderer:
             if 'preproc' in renderers:
                 if self.prerenderer is not None:
                     content = self.prerenderer.render(content)
-            if 'markdown' in renderers:
+            if 'markdown' in renderers or 'markdown-mistune' in renderers:
+                content = mistune.markdown(content)
+            if 'markdown-markdown' in renderers:
                 content = markdown.markdown(content, extensions=['markdown.extensions.footnotes'])
             content = prefix + content + postfix
             title = page.title

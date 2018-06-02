@@ -7,3 +7,5 @@ markdown==2.6.11
 pymongo==3.6.1
 requests==2.18.4
 redis==2.10.6
+cython==0.28.3
+mistune==0.8.3
