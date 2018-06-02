@@ -1,4 +1,5 @@
 mongo-url: null
+redis-url: null
 
 min-status: 5
 
@@ -12,6 +13,8 @@ series_preifx: true
 image-folder: null
 
 output-path: output
+
+partial-builds: false
 
 include-raw: true
 

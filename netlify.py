@@ -47,33 +47,44 @@ class Netlify:
         self.deploy_id = data['id']
         return data
     
-    def deploy_files(self, files):
+    def deploy_files(self, files, existing_hashes=None):
         """Deploys files and sets deploy_id
         
             files - {path: bytes object}
         
             """
+        hashes = existing_hashes or {}
+        hashes.update({k: hashlib.sha1(v).hexdigest() for k, v in files.items()})
+        
         file_digest = {
-            'files': {k: hashlib.sha1(v).hexdigest() for k, v in files.items()}
+            'files': hashes
         }
+        
         res = self._post('sites/{}/deploys'.format(self.site_id), json=file_digest)
         deploy_res = res.json()
+        
         self.deploy_id = deploy_res['id']
         required_hashes = deploy_res['required']
         by_hash = {v: k for k, v in file_digest['files'].items()}
+        
+        no_file_hashes = set(required_hashes) - set(by_hash)
+        if no_file_hashes:
+            print("hashes missing files", no_file_hashes)
+            raise ValueError()
+        
         for file_hash in required_hashes:
             path = by_hash[file_hash]
             url = "deploys/{}/files{}".format(self.deploy_id, path)
             self._put_file(url, files[path])
         
-        return deploy_res
+        return deploy_res, hashes
     
-    def deploy_fs(self, deploy):
+    def deploy_fs(self, deploy, existing_hashes=None):
         files = {
             path: deploy.getbytes(path)
             for path in deploy.walk.files()
         }
-        return self.deploy_files(files)
+        return self.deploy_files(files, existing_hashes)
 
 def main():
     import argparse

@@ -6,6 +6,8 @@ python build.py
 
 from pprint import pprint
 import sys
+from itertools import groupby
+import hashlib
 
 from fs.osfs import OSFS
 from fs.ftpfs import FTPFS
@@ -14,6 +16,8 @@ import fs
 import fs.path
 import pymongo
 import hjson
+from redis import Redis
+from pymongo import MongoClient
 
 from page import Page
 import blog
@@ -22,9 +26,36 @@ from util import try_int
 from render import PageRenderer
 from render.prerender import PreRenderer
 from assets import ImageSrc
+import build_target.fs_target, build_target.debug_target, build_target.netlify_target
 
 class ConfigError(Exception):
     pass
+
+class State:
+    def __init__(self, config):
+        self._config = config
+        self.config = config
+        self.series = None
+        self.pages = None
+        self.other = {}
+        self.partial_build = False
+        
+        self._mongo_connection: MongoClient = None
+        self._redis_connection: Redis = None
+    
+    def get_mongo(self):
+        if self._mongo_connection is not None:
+            return self._mongo_connection
+        self._mongo_connection = MongoClient(self._config['mongo-url'])
+        return self._mongo_connection
+    
+    def get_redis(self):
+        if not self._config['redis-url']:
+            return None
+        if self._redis_connection is not None:
+            return self._redis_connection
+        self._redis_connection = Redis(host=self._config['redis-url'])
+        return self._redis_connection
 
 class Config:
     def __init__(self, additional_file=None):
@@ -79,8 +110,10 @@ class Series:
         self.path_part = self.name.lower().replace(' ', '-')
         self.fixed_nav_entries = bool(s_config.get('fixed_nav_entries', True))
 
-def retrieve_pages(config):
-    remote = pymongo.MongoClient(config['mongo-url'])
+def retrieve_series(state):
+    config = state.config
+    
+    remote = state.get_mongo()
     series_query = {}
     if config.get('series'):
         series_query['name'] = {'$in': config.get('series')}
@@ -88,13 +121,46 @@ def retrieve_pages(config):
         series_query['config.status'] = {'$gte': config['min-status']}
     remote_series = remote.ndtest.series.find(series_query)
     remote_series = list(remote_series)
-    series_ids = [str(s['_id']) for s in remote_series]
+    
+    return_series = [Series(raw_series, config) for raw_series in remote_series]
+    
+    return return_series
+
+def retrieve_pages(state, series_list, present_series={}):
+    config = state.config
+    remote = state.get_mongo()
+    
+    return_series = series_list
+    
+    series_ids = [s.id for s in return_series]
     page_query = {
         'series': {'$in': series_ids}, 
     }
     if config['min-status'] is not None:
         page_query['meta.status'] = {'$gte': config['min-status']}
-    remote_pages = remote.ndtest.pages.find(page_query)
+    
+    remote_uuids = remote.ndtest.pages.find(page_query, {'series': 1, 'uuid': 1, '_id': 0})
+    remote_uuids = sorted(remote_uuids, key=lambda x: x.get('series') or "")
+    
+    uuid_hashes = {}
+    for series_id, pages in groupby(remote_uuids, lambda x: x.get('series')):
+        m = hashlib.sha256()
+        for uuid in (p.get('uuid') for p in pages):
+            if not uuid:
+                uuid = "8"
+            m.update(uuid.encode())
+        uuid_hashes[series_id] = m.hexdigest()
+    
+    needed_series = [s for s in return_series if s.id not in present_series or uuid_hashes[s.id] != present_series[s.id]]
+    
+    page_query = {
+        'series': {'$in': [s.id for s in needed_series]},
+    }
+    
+    if not needed_series:
+        remote_pages = []
+    else:
+        remote_pages = remote.ndtest.pages.find(page_query)
     remote_pages = list(remote_pages)
 
     blog_pages = [p for p in remote_pages if p['meta'].get('blog')]
@@ -105,16 +171,14 @@ def retrieve_pages(config):
     
     all_pages = {}
 
-    for raw_series in remote_series:
-        series = Series(raw_series, config)
-        
+    for series in needed_series:
         hier = series.hier
         series_id = series.id
         pages = [p for p in remote_pages if p['series'] == series_id]
         series_blog_pages = [p for p in blog_pages if p['series'] == series_id]
         
         root = Page(series=series)
-        all_pages[series.name] = root
+        all_pages[series.id] = root
         
         for page in pages:
             path = [page.get('meta', {}).get(h) for h in hier]
@@ -134,25 +198,29 @@ def retrieve_pages(config):
                     child.change_root(page)
                 page.children = root.children
                 root = page
-                all_pages[series.name] = root
+                all_pages[series.id] = root
             else:
                 root.add_page_obj(path, page)
     
-    return all_pages
+    return all_pages, return_series, uuid_hashes
 
-def gen_fs(test_fs, all_pages, config, include_static=True, noisy=False):
-    if include_static:
+def gen_fs(test_fs, all_pages, series_list, config, state, include_static=True, noisy=False):
+    if not state.partial_build:
         test_fs.removetree('/')
     else:
+        series_parts = [root.series.path_part for _, root in all_pages.items()]
         for d in test_fs.listdir('/'):
-            if d == 'static':
+            if d in ['static', 'assets']:
+                continue
+            # don't delete files that aren't being rebuilt
+            if d not in series_parts:
                 continue
             if test_fs.isfile(d):
                 test_fs.remove(d)
             else:
                 test_fs.removetree(d)
     
-    for name, root in all_pages.items():
+    for series_id, root in all_pages.items():
         if config.series_prefix:
             test_fs.makedir(root.series.path_part)
             root.build_fs(test_fs.opendir(root.series.path_part))
@@ -163,20 +231,19 @@ def gen_fs(test_fs, all_pages, config, include_static=True, noisy=False):
     if config.series_prefix:
         with test_fs.open('index.html', 'w') as f:
             f.write('<a style="color:black" href="https://nanodesutranslations.wordpress.com/"><h1>Nanodesu</h1></a>')
-            for name, root in all_pages.items():
-                series = root.series
+            for series in series_list:
                 f.write('<div><a href="{}">{}</a><br></div>'.format(series.path_part, series.name))
     
-    if include_static:
+    if not state.partial_build or include_static:
         with open_fs("osfs://static") as static_fs:
             fs.copy.copy_fs(static_fs, test_fs)
-        try:
-            image_ext = config.page_renderer.prerenderer.extensions['image']
-        except (AttributeError, KeyError):
-            pass
-        else:
-            test_fs.makedir('assets', recreate=True)
-            image_ext.add_assets(test_fs.opendir('assets'))
+    try:
+        image_ext = config.page_renderer.prerenderer.extensions['image']
+    except (AttributeError, KeyError):
+        pass
+    else:
+        test_fs.makedir('assets', recreate=True)
+        image_ext.add_assets(test_fs.opendir('assets'))
 
 
 def main():
@@ -188,81 +255,40 @@ def main():
     else:
         config = Config(config_fn)
     
-    image_ext = ImageSrc(config)
-    prerenderer = PreRenderer({'image': image_ext})
-    config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
-
-    all_pages = retrieve_pages(config)
-    
-    ftp_info = config.get('ftp-info')
+    debug_mode = "debug" in sys.argv
     netlify_key = config.get('netlify-key')
     netlify_site_id = config.get('netlify-site-id')
-    if netlify_key and netlify_site_id:
-        out_fs = open_fs("mem://")
-        gen_fs(out_fs, all_pages, config)
-        
-        from netlify import Netlify
-        netlify = Netlify(netlify_key, netlify_site_id)
-        netlify.deploy_fs(out_fs)
     
-    if ftp_info is not None:
-        include_static = 'static' in sys.argv
-        
-        ftp_uri = "{host}".format(**ftp_info)
-        
-        class SpecialFTPFS(FTPFS):
-            def makedir(self, path, recreate=False, *args, **kwargs):
-                try:
-                    return FTPFS.makedir(self, path, *args, **kwargs)
-                except fs.errors.DirectoryExists:
-                    pass
-        
-        with SpecialFTPFS(ftp_uri, user=ftp_info['user'], passwd=ftp_info['pass']) as ftp_fs:
-            if config.url_prefix:
-                ftp_fs.makedir(config.url_prefix)
-                ftp_fs = ftp_fs.opendir(config.url_prefix)
-            gen_fs(ftp_fs, all_pages, config, include_static=include_static, noisy=True)
+    state = State(config)
+    state.other['tree'] = "tree" in sys.argv
+    if debug_mode:
+        deploy_target = build_target.debug_target.DebugServer(state)
+    elif netlify_key and netlify_site_id:
+        deploy_target = build_target.netlify_target.Netlify(state)
+    else:
+        deploy_target = build_target.fs_target.FileSystem(state)
     
-    if config['output-path']:
-        debug_mode = "debug" in sys.argv
-        
-        def get_out_fs():
-            if debug_mode:
-                return open_fs("mem://")
-            else:
-                osfs_url = "osfs://{}".format(config['output-path'])
-                return open_fs(osfs_url, create=True)
-        
-        with get_out_fs() as out_fs:
-            out_fs_root = out_fs
-            if config.url_prefix:
-                out_fs.makedir(config.url_prefix, recreate=True)
-                out_fs = out_fs.opendir(config.url_prefix)
-            
-                gen_fs(out_fs, all_pages, config)
-            else:
-                gen_fs(out_fs, all_pages, config)
-            
-            if "tree" in sys.argv:
-                out_fs_root.tree()
-            
-            if debug_mode:
-                import debug_server
-                def regen():
-                    config.load_config()
-                    config.page_renderer.load_templates()
-                    gen_fs(out_fs, all_pages, config)
-                    if "tree" in sys.argv:
-                        out_fs_root.tree()
-                def p_reload():
-                    config.load_config()
-                    image_ext.force_reload()
-                    config.page_renderer.load_templates()
-                    all_pages = retrieve_pages(config)
-                    gen_fs(out_fs, all_pages, config)
-                
-                special_pages = {'/regen': regen, '/reload': p_reload}
-                debug_server.start_debug_server(out_fs_root, config['debug-server-port'], special_pages)
+    partial_build = config['partial-builds'] and 'full' not in sys.argv
+    state.partial_build = partial_build
+    if partial_build:
+        present_series = deploy_target.present_series()
+    else:
+        present_series = {}
+    
+    image_ext = ImageSrc(config)
+    state.other['image_ext'] = image_ext
+    prerenderer = PreRenderer({'image': image_ext})
+    config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
+    
+    series_list = retrieve_series(state)
+    all_pages, series_list, uuid_hashes = retrieve_pages(state, series_list, present_series)
+    
+    if uuid_hashes == present_series:
+        print("NOTHING TO DO")
+        return
+    
+    deploy_target.gen_fs(all_pages, series_list)
+    deploy_target.post_gen(uuid_hashes)
 
 if __name__ == '__main__':
     main()

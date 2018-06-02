@@ -32,5 +32,5 @@ class ImageSrc:
         if self.image_folder:
             with open_fs("osfs://{}".format(self.image_folder)) as static_fs:
                 for key, path in self.images.items():
-                    if key in self.used_images:
+                    if key in self.used_images and not asset_fs.exists(path):
                         fs.copy.copy_file(static_fs, path, asset_fs, path)
