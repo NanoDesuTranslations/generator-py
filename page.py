@@ -173,8 +173,8 @@ class Page:
             out_fs.makedir(p_n, recreate=True)
             child.build_fs(out_fs.opendir(p_n))
     
-    def render(self):
-        return self.config.page_renderer.render(self, 'page', 'chapter-inner')
+    def render(self, *, inner_only=False):
+        return self.config.page_renderer.render(self, 'page', 'chapter-inner', inner_only=inner_only)
     
     def get_nav_children(self):
         for child in self:

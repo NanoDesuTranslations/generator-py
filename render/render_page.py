@@ -32,7 +32,7 @@ class PageRenderer:
             with open(template_fn, encoding='utf8') as f:
                 self.templates[template_name] = f.read()
     
-    def render(self, page, template_key, inner_template=None):
+    def render(self, page, template_key, inner_template=None, *, inner_only=False):
         url_prefix = self.url_prefix
         config = self.config
         templates = self.templates
@@ -87,6 +87,9 @@ class PageRenderer:
         
         if self.navigation is None or page.series.id != self.navigation[0]:
             self.navigation = (page.series.id, gen_nav(page.root, page))
+        
+        if inner_only:
+            return content
         
         params = {
             'content': content,

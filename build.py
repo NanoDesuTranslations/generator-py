@@ -56,6 +56,14 @@ class State:
             return self._redis_connection
         self._redis_connection = Redis(host=self._config['redis-url'])
         return self._redis_connection
+    
+    def close(self):
+        if self._mongo_connection:
+            self._mongo_connection.close()
+            self._mongo_connection = None
+        if self._redis_connection:
+            self._redis_connection.connection_pool.disconnect()
+            self._redis_connection = None
 
 class Config:
     def __init__(self, additional_file=None):
@@ -247,6 +255,32 @@ def gen_fs(test_fs, all_pages, series_list, config, state, include_static=True, 
         test_fs.makedir('assets', recreate=True)
         image_ext.add_assets(test_fs.opendir('assets'))
 
+def gen_single_page(state, page_id, *, inner_only=False,):
+    single_page = page_id
+    config = state.config
+    
+    remote = state.get_mongo()
+    from bson.objectid import ObjectId
+    page_id = ObjectId(single_page)
+    remote_pages = remote.ndtest.pages.find({'_id': page_id})
+    try:
+        raw_page = next(remote_pages)
+    except StopIteration:
+        print("page not found")
+        return {'data': 'page not found'}
+    
+    series_id = ObjectId(raw_page['series'])
+    raw_series = remote.ndtest.series.find({'_id': series_id})
+    raw_series = next(raw_series)
+    series = Series(raw_series, config)
+    
+    root = Page(series=series)
+    path = []
+    root.add_page(path, raw_page)
+    
+    return {
+        'data': root.render(inner_only=inner_only)
+    }
 
 def main():
     try:
@@ -256,12 +290,51 @@ def main():
         config = Config()
     else:
         config = Config(config_fn)
+    try:
+        config_page_i = sys.argv.index('--page')
+        single_page = sys.argv[config_page_i + 1]
+    except (ValueError, IndexError):
+        single_page = None
+    try:
+        config_page_out_i = sys.argv.index('-o')
+        single_page_out = sys.argv[config_page_out_i + 1]
+    except (ValueError, IndexError):
+        single_page_out = None
     
     debug_mode = "debug" in sys.argv
     netlify_key = config.get('netlify-key')
     netlify_site_id = config.get('netlify-site-id')
     
     state = State(config)
+    
+    if single_page:
+        prerenderer = PreRenderer({})
+        config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
+        
+        if single_page_out:
+            res = gen_single_page(state, single_page)
+            with open(single_page_out, 'w') as f:
+                f.write(res['data'])
+            state.close()
+            import os
+            # exit skipping some garbage collection
+            os._exit(0)
+            return
+        
+        test_fs = open_fs("mem://")
+        with open_fs("osfs://static") as static_fs:
+            fs.copy.copy_fs(static_fs, test_fs)
+        
+        def single_page_cb(page_id, *, inner_only=False):
+            res = gen_single_page(state, page_id, inner_only=inner_only)
+            return res['data']
+        
+        from single_page import single_page_server
+        single_page_server.start_single_page_server(test_fs, single_page_cb, config['debug-server-port'], debug=debug_mode)
+        
+        state.close()
+        return
+    
     state.other['tree'] = "tree" in sys.argv
     if debug_mode:
         deploy_target = build_target.debug_target.DebugServer(state)
@@ -287,10 +360,12 @@ def main():
     
     if uuid_hashes == present_series:
         print("NOTHING TO DO")
+        state.close()
         return
     
     deploy_target.gen_fs(all_pages, series_list)
     deploy_target.post_gen(uuid_hashes)
+    state.close()
 
 if __name__ == '__main__':
     main()
