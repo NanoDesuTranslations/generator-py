@@ -65,7 +65,7 @@ class PageRenderer:
         postfix = "</{}>".format(wrap_tag)
         
         if 'precode' in renderers:
-            prefix += '<code><pre>'
+            prefix += '<code><pre style="white-space: pre-wrap;word-wrap: break-word;">'
             postfix = '</pre></code>' + postfix
         
         if not page.is_index:
