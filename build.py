@@ -164,6 +164,7 @@ def retrieve_pages(state, series_list, present_series={}):
     needed_series = [s for s in return_series if s.id not in present_series or uuid_hashes[s.id] != present_series[s.id]]
     
     page_query = {
+        **page_query, # include meta.status part of the query
         'series': {'$in': [s.id for s in needed_series]},
     }
     
