@@ -2,6 +2,15 @@
 
 python build.py
 
+start a debug server on part 8888
+python build.py debug
+
+run single page server
+python build.py --page _
+
+run single page server in debug mode
+python build.py --page debug
+
 """
 
 from pprint import pprint
@@ -117,6 +126,13 @@ class Series:
         self.id = str(raw_series['_id'])
         self.path_part = self.name.lower().replace(' ', '-')
         self.fixed_nav_entries = bool(s_config.get('fixed_nav_entries', True))
+        
+        # NOTE: blog path currently doesn't work for any values but None and []
+        # any other path will fail
+        self.blog_path = s_config.get('blog_path', [])
+        if self.blog_path is False:
+            self.blog_path = None
+        assert self.blog_path in [[], None]
 
 def retrieve_series(state):
     config = state.config
@@ -202,16 +218,17 @@ def retrieve_pages(state, series_list, present_series={}):
                 path.append(path_postfix)
             
             root.add_page(path, page)
-            
-        for path, page in blog.process_blog_posts(series_blog_pages, series):
-            if path == []:
-                for child in root:
-                    child.change_root(page)
-                page.children = root.children
-                root = page
-                all_pages[series.id] = root
-            else:
-                root.add_page_obj(path, page)
+        
+        if series.blog_path is not None:
+            for path, page in blog.process_blog_posts(series_blog_pages, series):
+                if path == []:
+                    for child in root:
+                        child.change_root(page)
+                    page.children = root.children
+                    root = page
+                    all_pages[series.id] = root
+                else:
+                    root.add_page_obj(path, page)
     
     return all_pages, return_series, uuid_hashes
 
