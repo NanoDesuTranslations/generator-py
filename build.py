@@ -106,6 +106,10 @@ class Config:
             raise ConfigError()
         self.path_prefix = self.url_prefix or self.env_url_prefix
         self.series_prefix = bool(raw_config['series_preifx'])
+        
+        image_server = raw_config.get('image_server')
+        self.image_server = image_server.get('host')
+        self.image_server_auth = image_server.get('auth')
     
     def get(self, key, default=None):
         return self.raw_config.get(key, default)
@@ -329,9 +333,12 @@ def main():
     
     state = State(config)
     
+    image_ext = ImageSrc(config)
+    state.other['image_ext'] = image_ext
+    prerenderer = PreRenderer({'image': image_ext})
+    config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
+    
     if single_page:
-        prerenderer = PreRenderer({})
-        config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
         
         if single_page_out:
             res = gen_single_page(state, single_page)
@@ -371,11 +378,6 @@ def main():
         present_series = deploy_target.present_series()
     else:
         present_series = {}
-    
-    image_ext = ImageSrc(config)
-    state.other['image_ext'] = image_ext
-    prerenderer = PreRenderer({'image': image_ext})
-    config.page_renderer = PageRenderer(config, prerenderer=prerenderer)
     
     series_list = retrieve_series(state)
     all_pages, series_list, uuid_hashes = retrieve_pages(state, series_list, present_series)
