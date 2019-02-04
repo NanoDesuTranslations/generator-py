@@ -107,7 +107,7 @@ class Config:
         self.path_prefix = self.url_prefix or self.env_url_prefix
         self.series_prefix = bool(raw_config['series_preifx'])
         
-        image_server = raw_config.get('image_server')
+        image_server = raw_config.get('image_server', {})
         self.image_server = image_server.get('host')
         self.image_server_auth = image_server.get('auth')
     
