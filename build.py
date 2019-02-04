@@ -124,6 +124,7 @@ class Series:
         self.header_url = s_config.get('header-url', '')
         self.hier = s_config.get('hierarchy', [])
         self.id = str(raw_series['_id'])
+        self.uuid = str(raw_series.get('uuid', ''))
         self.path_part = self.name.lower().replace(' ', '-')
         self.fixed_nav_entries = bool(s_config.get('fixed_nav_entries', True))
         
@@ -165,12 +166,15 @@ def retrieve_pages(state, series_list, present_series={}):
     if config['min-status'] is not None:
         page_query['meta.status'] = {'$gte': config['min-status']}
     
+    series_uuids = {s.id: s.uuid for s in series_list}
+    
     remote_uuids = remote.ndtest.pages.find(page_query, {'series': 1, 'uuid': 1, '_id': 0})
     remote_uuids = sorted(remote_uuids, key=lambda x: x.get('series') or "")
     
     uuid_hashes = {}
     for series_id, pages in groupby(remote_uuids, lambda x: x.get('series')):
         m = hashlib.sha256()
+        m.update(series_uuids.get(series_id, '').encode())
         for uuid in (p.get('uuid') for p in pages):
             if not uuid:
                 uuid = "8"
